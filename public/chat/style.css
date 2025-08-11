@@ -1,0 +1,175 @@
+:root{
+    --bg:#061526; /* Cor de fundo principal */
+    --panel:#07263a; /* Cor de painel/elemento */
+    --card:#0b3750; /* Cor de card */
+    --accent:#2ea8ff; /* Cor de destaque (botão, etc.) */
+    --muted:#9fd8ff; /* Cor de texto mais suave */
+  }
+  *{
+    box-sizing:border-box; /* Garante que padding e border sejam incluídos na largura/altura */
+  }
+  body{
+    margin:0;
+    font-family: 'Inter', 'Roboto', system-ui, -apple-system, "Segoe UI", Arial, sans-serif; /* Fontes preferidas */
+    background:linear-gradient(180deg,var(--bg),#04253a); /* Gradiente de fundo */
+    color:var(--muted); /* Cor de texto padrão */
+    height:100vh; /* Ocupa 100% da altura da viewport */
+    display:flex;
+    flex-direction:column; /* Layout em coluna para header, app e input */
+    overflow: hidden; /* Evita scroll indesejado no body */
+  }
+  header{
+    padding:16px 20px;
+    background:linear-gradient(90deg, rgba(4,20,40,0.9), rgba(8,36,61,0.95)); /* Gradiente para o cabeçalho */
+    color:#dff6ff; /* Cor do texto do cabeçalho */
+    font-weight:700;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4); /* Sombra para o cabeçalho */
+    text-align: center; /* Centraliza o texto do cabeçalho */
+    font-size: 1.25rem; /* Tamanho da fonte do cabeçalho */
+  }
+  .app{
+    flex:1; /* Ocupa o espaço restante entre o header e o input */
+    position:relative;
+    overflow:hidden; /* Esconde qualquer transbordamento */
+    display: flex;
+    flex-direction: column;
+  }
+  /* mensagens */
+  #messages{
+    /* Ajuste para evitar que a bolha de input flutuante sobreponha as mensagens */
+    padding:28px;
+    padding-bottom: 90px; /* Aumenta o padding inferior para deixar espaço para o input flutuante */
+    height:100%;
+    overflow-y:auto; /* Permite rolagem vertical das mensagens */
+    display:flex;
+    flex-direction:column;
+    gap:14px; /* Espaço entre as bolhas de mensagem */
+    flex-grow: 1; /* Permite que o container de mensagens cresça */
+    scrollbar-width: thin; /* Para Firefox */
+    scrollbar-color: var(--accent) var(--panel); /* Para Firefox */
+  }
+  /* Estilo da barra de rolagem para navegadores WebKit */
+  #messages::-webkit-scrollbar {
+    width: 8px;
+  }
+  #messages::-webkit-scrollbar-track {
+    background: var(--panel);
+    border-radius: 10px;
+  }
+  #messages::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+  }
+  .bubble{
+    max-width:72%; /* Largura máxima da bolha */
+    padding:12px 14px;
+    border-radius:14px;
+    font-size:0.98rem;
+    box-shadow:0 6px 20px rgba(2,8,20,0.6); /* Sombra das bolhas */
+    word-wrap: break-word; /* Garante que o texto quebre dentro da bolha */
+  }
+  .bubble.bot{
+    align-self:flex-start; /* Alinha bolhas do bot à esquerda */
+    background:linear-gradient(180deg,#082b3f,#063049);
+    color:#d6f4ff;
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  .bubble.user{
+    align-self:flex-end; /* Alinha bolhas do usuário à direita */
+    background:linear-gradient(180deg,#053e56,#055a70);
+    color:#e7fbff;
+    border:1px solid rgba(255,255,255,0.03);
+  }
+  /* welcome central */
+  #welcome{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%); /* Centraliza o elemento */
+    background:linear-gradient(180deg, rgba(11,55,80,0.86), rgba(6,30,48,0.78));
+    padding:18px 22px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 8px 24px rgba(2,10,20,0.6);
+    border:1px solid rgba(46,168,255,0.12);
+    font-weight:800;
+    z-index: 10; /* Garante que esteja acima das mensagens */
+  }
+  #welcome .muted{
+    display:block;
+    color:rgba(159,216,255,0.75);
+    font-weight:600;
+    margin-top:8px;
+    font-size:0.95rem;
+  }
+  /* floating input bubble */
+  .floating-input{
+    position:fixed; /* Fixa na parte inferior */
+    left:50%;
+    bottom:22px;
+    transform:translateX(-50%); /* Centraliza horizontalmente */
+    width:min(900px,92%); /* Largura responsiva, no máximo 900px */
+    max-width:900px;
+    background:linear-gradient(180deg, rgba(6,32,52,0.85), rgba(8,36,61,0.9));
+    padding:10px;
+    border-radius:999px; /* Borda arredondada para parecer uma bolha */
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 14px 40px rgba(2,10,20,0.6);
+    border:1px solid rgba(46,168,255,0.06);
+    z-index: 20; /* Garante que esteja acima de tudo */
+  }
+  .floating-input form{
+    display:flex;
+    flex:1;
+    gap:10px;
+  }
+  .floating-input input{
+    flex:1;
+    background:transparent; /* Fundo transparente para o input */
+    border:none;
+    padding:12px 16px;
+    border-radius:999px;
+    color:var(--muted);
+    outline:none; /* Remove a borda de foco padrão */
+    font-size:1rem;
+  }
+  .floating-input input::placeholder{
+    color:rgba(159,216,255,0.42); /* Cor do placeholder */
+  }
+  .send-btn{
+    background:var(--accent); /* Cor de destaque para o botão */
+    padding:10px 14px;
+    border-radius:999px;
+    border:none;
+    font-weight:800;
+    color:#02313b;
+    cursor:pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease; /* Transição suave */
+    box-shadow: 0 4px 10px rgba(46,168,255,0.3); /* Sombra para o botão */
+  }
+  .send-btn:hover {
+    background-color: #0087d3; /* Escurece no hover */
+    transform: translateY(-1px); /* Pequeno efeito de elevação */
+  }
+  .send-btn:active {
+    transform: translateY(0); /* Volta ao normal no clique */
+    box-shadow: 0 2px 5px rgba(46,168,255,0.2); /* Sombra menor no clique */
+  }
+
+  /* small screen tweaks */
+  @media (max-width:520px){
+    .floating-input{
+      bottom:14px;
+      padding:8px;
+      width: 96%; /* Mais largura em telas pequenas */
+    }
+    .floating-input input{
+      font-size:0.95rem;
+      padding:10px 14px;
+    }
+    .bubble {
+      max-width: 90%; /* Bolhas maiores em telas pequenas */
+    }
+  }

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🌊 Chat Oceânico — Nemo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/chat/style.css">
+</head>
+<body>
+  <header>🌊 Chat Oceânico — Nemo</header>
+  <div class="app">
+    <div id="messages"></div>
+    <div id="welcome">
+      <span style="font-size:1.05rem">Bem-vindo ao <strong>Chat Oceânico</strong></span>
+      <span class="muted">Sou <strong>Nemo</strong>, especialista em cultura oceânica. Experimente: "O que é a maré?"</span>
+    </div>
+  </div>
+
+  <!-- floating input bubble -->
+  <div class="floating-input" role="region" aria-label="Entrada de mensagem">
+    <form id="chat-form" autocomplete="off">
+      <input id="user-input" name="message" type="text" placeholder="Pergunte algo sobre o oceano..." aria-label="Mensagem" />
+      <button class="send-btn" type="submit">Enviar</button>
+    </form>
+  </div>
+
+<script type="module">
+  // Importa a biblioteca Google Generative AI
+  import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+  // IMPORTANTE: Em produção, NUNCA exponha sua API KEY diretamente no frontend.
+  // Para fins de demonstração, deixamos a chave aqui.
+  // Em um ambiente real, use um backend para fazer as chamadas à API.
+  const API_KEY = "AIzaSyA3tKXVdHSQ3nAwIxbGVbcEnXoLlOtZbZQ"; // A chave será fornecida pelo ambiente em tempo de execução
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  // Inicializa o modelo Gemini-2.5-flash
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+
+  // Seletores de elementos HTML
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('user-input');
+  const messages = document.getElementById('messages');
+  const welcome = document.getElementById('welcome');
+
+  // Histórico da conversa para manter o contexto
+  let chatHistory = [];
+
+  // Prompt de controle inicial para definir o comportamento do Nemo
+  const systemPrompt = `Você é Nemo, uma assistente chamada Nemo especializada em preservação oceânica. Responda de forma clara, amigável e curta quando possível. Use **negrito** (markdown) para títulos ou palavras-chave importantes.`;
+
+  // Adiciona o prompt do sistema ao histórico como a primeira "mensagem"
+  // Embora não seja exibido, ele informa o modelo sobre o papel do Nemo
+  chatHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
+
+
+  /**
+   * Cria e retorna um elemento de bolha de mensagem (div).
+   * @param {string} text - O texto da mensagem.
+   * @param {string} who - O remetente da mensagem ('bot' ou 'user').
+   * @returns {HTMLDivElement} - O elemento div da bolha de mensagem.
+   */
+  function createBubble(text, who = 'bot') {
+    const div = document.createElement('div');
+    // Adiciona classes CSS para estilização e alinhamento
+    div.className = 'bubble ' + (who === 'user' ? 'user' : 'bot');
+    const inner = document.createElement('div');
+    inner.style.whiteSpace = 'pre-wrap'; // Preserva quebras de linha e espaços
+
+    // Converte o formato markdown de negrito (**) para tags <strong> HTML
+    // Garante que o texto seja seguro, evitando XSS
+    const safeHTML = String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Converte **texto** para <strong>texto</strong>
+
+    inner.innerHTML = safeHTML;
+    div.appendChild(inner);
+    return div;
+  }
+
+  // Adiciona um listener para o evento de submit do formulário de chat
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Impede o comportamento padrão de recarregar a página
+    const text = input.value.trim(); // Obtém o texto do input, removendo espaços extras
+    if (!text) return; // Se o input estiver vazio, não faz nada
+
+    // Remove a mensagem de boas-vindas se ela estiver presente
+    if (welcome && welcome.parentNode) {
+      welcome.remove();
+    }
+
+    // Adiciona a mensagem do usuário ao chat visível
+    messages.appendChild(createBubble(text, 'user'));
+    // Adiciona a mensagem do usuário ao histórico de chat
+    chatHistory.push({ role: "user", parts: [{ text: text }] });
+    input.value = ''; // Limpa o input
+    messages.scrollTop = messages.scrollHeight; // Rola para o final das mensagens
+
+    // Adiciona uma mensagem de "Nemo está pensando..." enquanto a IA gera a resposta
+    const thinking = createBubble('Nemo está pensando...', 'bot');
+    messages.appendChild(thinking);
+    messages.scrollTop = messages.scrollHeight; // Rola novamente para exibir a mensagem de "pensando"
+
+    try {
+      // Realiza a chamada à API Gemini para gerar conteúdo, passando o histórico completo
+      const payload = { contents: chatHistory };
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      // Extrai o texto da resposta da IA de diferentes estruturas possíveis do retorno da API
+      let botText = '';
+      if (result.candidates && result.candidates.length > 0 &&
+          result.candidates[0].content && result.candidates[0].content.parts &&
+          result.candidates[0].content.parts.length > 0) {
+        botText = result.candidates[0].content.parts[0].text;
+      } else {
+        // Fallback caso a estrutura da resposta seja inesperada
+        botText = 'Desculpe, não consegui gerar uma resposta. Tente novamente.';
+        console.error('Estrutura de resposta da API inesperada:', result);
+      }
+
+      // Remove a mensagem de "Nemo está pensando..."
+      if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+
+      // Adiciona a resposta formatada da IA ao chat visível
+      messages.appendChild(createBubble(botText || 'Desculpe, sem resposta da IA.', 'bot'));
+      // Adiciona a resposta da IA ao histórico de chat
+      chatHistory.push({ role: "model", parts: [{ text: botText }] }); // 'model' é a role para o bot
+      messages.scrollTop = messages.scrollHeight; // Rola para o final das mensagens
+    } catch (err) {
+      console.error('Erro ao consultar a API:', err);
+      // Remove a mensagem de "pensando" em caso de erro
+      if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+      // Adiciona uma mensagem de erro ao chat
+      messages.appendChild(createBubble('Erro ao consultar a API. Veja o console para detalhes.', 'bot'));
+      messages.scrollTop = messages.scrollHeight;
+      // Em caso de erro, remove a última mensagem do usuário do histórico para evitar loop de erro
+      chatHistory.pop();
+    }
+  });
+
+  // Garante que o campo de input esteja focado quando a página carrega
+  window.addEventListener('load', () => input.focus());
+</script>
+</body>
+</html>
