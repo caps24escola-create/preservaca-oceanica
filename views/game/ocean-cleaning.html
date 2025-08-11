@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Limpeza Oceânica</title>
-    <link rel="stylesheet" href="/_game/ocean-cleaning/style.css">
+    <link rel="stylesheet" href="_game/ocean-cleaning/style.css">
 </head>
 <body>
     <div id="gameContainer">
@@ -26,11 +26,9 @@
 
         <!-- Controles de Toque -->
         <div id="touchControls">
-            <div class="d-pad">
-                <div id="btn-up" class="touch-btn">▲</div>
-                <div id="btn-left" class="touch-btn">◀</div>
-                <div id="btn-right" class="touch-btn">▶</div>
-                <div id="btn-down" class="touch-btn">▼</div>
+            <div id="joystick-container">
+                <div id="joystick-base"></div>
+                <div id="joystick-stick"></div>
             </div>
             <div class="action-buttons">
                  <div id="btn-collect" class="touch-btn">🖐️</div>
@@ -38,6 +36,6 @@
         </div>
     </div>
 
-    <script src="/_game/ocean-cleaning/index.js"></script>
+    <script src="_game/ocean-cleaning/index.js"></script>
 </body>
 </html>

@@ -130,11 +130,17 @@ const canvas = document.getElementById('gameCanvas');
         function update() {
             if (!gameState.running) return;
             
-            // Mover submarino (teclado + toque)
+            // Mover submarino (teclado)
             if (keys['w'] || keys['arrowup']) submarine.vy -= submarine.speed;
             if (keys['s'] || keys['arrowdown']) submarine.vy += submarine.speed;
             if (keys['a'] || keys['arrowleft']) submarine.vx -= submarine.speed;
             if (keys['d'] || keys['arrowright']) submarine.vx += submarine.speed;
+            
+            // Mover submarino (joystick)
+            if (joystick.active) {
+                submarine.vx += joystick.x * submarine.speed;
+                submarine.vy += joystick.y * submarine.speed;
+            }
 
             submarine.vx *= submarine.friction;
             submarine.vy *= submarine.friction;
@@ -375,24 +381,62 @@ const canvas = document.getElementById('gameCanvas');
         });
 
         // --- Controles de Toque ---
-        function handleTouch(e, isPressed) {
+        const collectBtn = document.getElementById('btn-collect');
+        collectBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['collect'] = true; }, { passive: false });
+        collectBtn.addEventListener('touchend', e => { e.preventDefault(); keys['collect'] = false; }, { passive: false });
+
+        // --- Lógica do Joystick ---
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickStick = document.getElementById('joystick-stick');
+        const joystick = {
+            active: false,
+            x: 0,
+            y: 0,
+            startX: 0,
+            startY: 0,
+            maxDistance: 30 // Raio de movimento do stick
+        };
+
+        joystickContainer.addEventListener('touchstart', e => {
             e.preventDefault();
-            const id = e.currentTarget.id;
-            switch(id) {
-                case 'btn-up': keys['w'] = isPressed; break;
-                case 'btn-down': keys['s'] = isPressed; break;
-                case 'btn-left': keys['a'] = isPressed; break;
-                case 'btn-right': keys['d'] = isPressed; break;
-                case 'btn-collect': keys['collect'] = isPressed; break;
-            }
-        }
-        
-        const touchButtons = document.querySelectorAll('.touch-btn');
-        touchButtons.forEach(btn => {
-            btn.addEventListener('touchstart', e => handleTouch(e, true), { passive: false });
-            btn.addEventListener('touchend', e => handleTouch(e, false), { passive: false });
-            btn.addEventListener('touchcancel', e => handleTouch(e, false), { passive: false });
-        });
+            joystick.active = true;
+            const touch = e.changedTouches[0];
+            joystick.startX = touch.clientX;
+            joystick.startY = touch.clientY;
+        }, { passive: false });
+
+        joystickContainer.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!joystick.active) return;
+            
+            const touch = e.changedTouches[0];
+            let dx = touch.clientX - joystick.startX;
+            let dy = touch.clientY - joystick.startY;
+            
+            const distance = Math.hypot(dx, dy);
+            const angle = Math.atan2(dy, dx);
+            
+            // Limita o movimento do stick à base
+            const clampedDistance = Math.min(distance, joystick.maxDistance);
+            const newX = clampedDistance * Math.cos(angle);
+            const newY = clampedDistance * Math.sin(angle);
+            
+            joystickStick.style.transform = `translate(-50%, -50%) translate(${newX}px, ${newY}px)`;
+            
+            // Normaliza o output do joystick para -1 a 1
+            joystick.x = newX / joystick.maxDistance;
+            joystick.y = newY / joystick.maxDistance;
+
+        }, { passive: false });
+
+        joystickContainer.addEventListener('touchend', e => {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.x = 0;
+            joystick.y = 0;
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+        }, { passive: false });
+
 
         // Reiniciar com toque na tela de Game Over
         gameOverDiv.addEventListener('click', () => {
