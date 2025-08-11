@@ -2,27 +2,39 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Limpeza Oceânica</title>
     <link rel="stylesheet" href="/_game/ocean-cleaning/style.css">
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="gameCanvas"></canvas>
         
         <div id="gameUI">
             <div>Lixo Coletado: <span id="trashCount">0</span></div>
-            <div>Vidas: <span id="lives">1</span></div>
         </div>
         
         <div id="instructions">
-            WASD/Setas: Mover | E/Espaço: Coletar lixo | R: Reiniciar
+            <b>PC:</b> WASD/Setas: Mover | E/Espaço: Coletar | R: Reiniciar
         </div>
         
         <div id="gameOver">
-            <h2 id="gameOverTitle">Game Over!</h2>
+            <h2 id="gameOverTitle">Fim de Jogo!</h2>
             <p id="gameOverMessage"></p>
-            <p>Pressione R para reiniciar</p>
+            <p>Pressione R (PC) ou toque na tela para reiniciar.</p>
+        </div>
+
+        <!-- Controles de Toque -->
+        <div id="touchControls">
+            <div class="d-pad">
+                <div id="btn-up" class="touch-btn">▲</div>
+                <div id="btn-left" class="touch-btn">◀</div>
+                <div id="btn-right" class="touch-btn">▶</div>
+                <div id="btn-down" class="touch-btn">▼</div>
+            </div>
+            <div class="action-buttons">
+                 <div id="btn-collect" class="touch-btn">🖐️</div>
+            </div>
         </div>
     </div>
 

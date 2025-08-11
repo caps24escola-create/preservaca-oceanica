@@ -1,34 +1,41 @@
+/* CSS Integrado para simplicidade */
 body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(to bottom, #0066cc, #003366);
+    background: #003366;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    font-family: Arial, sans-serif;
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
+    color: white;
 }
 
 #gameContainer {
     position: relative;
-    border: 3px solid #004080;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 0 20px rgba(0, 100, 200, 0.5);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom, #0080ff 0%, #0066cc 30%, #004080 70%, #002040 100%);
 }
 
 #gameCanvas {
     display: block;
-    background: linear-gradient(to bottom, #0080ff 0%, #0066cc 30%, #004080 70%, #002040 100%);
+    width: 100%;
+    height: 100%;
+    cursor: none;
 }
 
 #gameUI {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    color: white;
-    font-size: 18px;
+    top: 15px;
+    left: 15px;
+    font-size: clamp(16px, 4vw, 22px); /* Tamanho de fonte responsivo */
     text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     z-index: 100;
 }
@@ -36,11 +43,13 @@ body {
 #instructions {
     position: absolute;
     bottom: 10px;
-    left: 10px;
-    color: white;
-    font-size: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(10px, 2.5vw, 12px);
     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
     z-index: 100;
+    text-align: center;
 }
 
 #gameOver {
@@ -48,11 +57,77 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 30px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: clamp(20px, 5vw, 40px);
     border-radius: 15px;
     text-align: center;
     display: none;
     z-index: 200;
+    width: 80%;
+    max-width: 400px;
 }
+
+#gameOver h2 {
+    margin-top: 0;
+    font-size: clamp(24px, 6vw, 32px);
+}
+
+/* --- Controles de Toque --- */
+#touchControls {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: none; /* Escondido por padrão */
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 20px;
+    box-sizing: border-box;
+    z-index: 150;
+    pointer-events: none; /* Permite cliques através do container */
+}
+
+/* A classe .touch-device será adicionada via JS para mostrar os controles */
+.touch-device #touchControls {
+    display: flex;
+}
+
+.d-pad, .action-buttons {
+    display: grid;
+    gap: 10px;
+    pointer-events: all; /* Habilita cliques nos botões */
+}
+
+.d-pad {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    width: 150px;
+    height: 150px;
+}
+
+.action-buttons {
+     width: 80px;
+     height: 80px;
+}
+
+.touch-btn {
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: white;
+    user-select: none; /* Impede a seleção de texto */
+    transition: background-color 0.1s;
+}
+
+.touch-btn:active {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+/* Posicionamento dos botões do D-pad */
+#btn-up { grid-area: 1 / 2 / 2 / 3; }
+#btn-left { grid-area: 2 / 1 / 3 / 2; }
+#btn-right { grid-area: 2 / 3 / 3 / 4; }
+#btn-down { grid-area: 3 / 2 / 4 / 3; }

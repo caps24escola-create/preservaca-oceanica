@@ -2,52 +2,64 @@ const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameOverDiv = document.getElementById('gameOver');
         
+        // --- Detecção de dispositivo de toque ---
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        }
+
+        if (isTouchDevice()) {
+            document.body.classList.add('touch-device');
+        }
+
+        // --- Funções de Responsividade ---
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (submarine) { // Se o jogo já começou, reposiciona o submarino
+                 submarine.y = canvas.height / 2;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        
         // Estado do jogo
         let gameState = {
             running: true,
             trashCollected: 0,
-            lives: 1
         };
         
         // Submarino
         let submarine = {
             x: 100,
-            y: canvas.height / 2,
-            width: 60,
+            y: 0, // Será definido no initGame
+            width: 60, // Dimensões originais
             height: 30,
-            vx: 0, // Velocidade X
-            vy: 0, // Velocidade Y
-            speed: 0.3, // Aceleração
-            friction: 0.95, // Atrito
-            angle: 0, // Ângulo de rotação
+            vx: 0,
+            vy: 0,
+            speed: 0.4, 
+            friction: 0.94,
+            angle: 0,
             collectRange: 80
         };
         
-        // Variáveis para o movimento do cenário
         let backgroundX = 0;
-        const backgroundScrollSpeed = 0.5; // Velocidade de rolagem do cenário
+        const backgroundScrollSpeed = 0.5;
         
-        // Arrays para objetos do jogo
-        let fish = [];
-        let trash = [];
-        let particles = [];
-        let bubbles = [];
-        
-        // Controles
+        let fish = [], trash = [], particles = [], bubbles = [];
         let keys = {};
         
-        // Inicializar jogo
+        // --- Inicialização do Jogo ---
         function initGame() {
+            resizeCanvas(); // Define o tamanho inicial do canvas
+
             submarine.x = 100;
             submarine.y = canvas.height / 2;
-            submarine.vx = 0; // Resetar velocidade
-            submarine.vy = 0; // Resetar velocidade
-            submarine.angle = 0; // Resetar ângulo
+            submarine.vx = 0;
+            submarine.vy = 0;
+            submarine.angle = 0;
             gameState.running = true;
             gameState.trashCollected = 0;
-            gameState.lives = 1;
             
-            backgroundX = 0; // Resetar a posição do cenário
+            backgroundX = 0;
             
             fish = [];
             trash = [];
@@ -56,32 +68,20 @@ const canvas = document.getElementById('gameCanvas');
             
             gameOverDiv.style.display = 'none';
             
-            // Criar peixes iniciais (o número foi reduzido de 4 para 2)
-            for (let i = 0; i < 2; i++) {
-                createFish();
-            }
-            
-            // Criar lixo inicial
-            for (let i = 0; i < 12; i++) {
-                createTrash();
-            }
-            
-            // Criar bolhas iniciais
-            for (let i = 0; i < 15; i++) {
-                createBubble();
-            }
+            for (let i = 0; i < 5; i++) createFish();
+            for (let i = 0; i < 15; i++) createTrash();
+            for (let i = 0; i < 20; i++) createBubble();
             
             updateUI();
         }
         
-        // Criar peixe
+        // --- Funções de Criação de Objetos ---
         function createFish() {
             const fishTypes = ['🐟', '🐠', '🐡', '🦈', '🐙', '🦑', '🐢'];
             fish.push({
-                x: canvas.width + Math.random() * 200, // Spawn off-screen to the right
+                x: canvas.width + Math.random() * 200,
                 y: 50 + Math.random() * (canvas.height - 100),
-                width: 40,
-                height: 40,
+                size: 30 + Math.random() * 20,
                 speed: 1 + Math.random() * 2,
                 type: fishTypes[Math.floor(Math.random() * fishTypes.length)],
                 direction: Math.random() > 0.5 ? 1 : -1,
@@ -91,14 +91,12 @@ const canvas = document.getElementById('gameCanvas');
             });
         }
         
-        // Criar lixo
         function createTrash() {
             const trashTypes = ['🗑️', '🥤', '🍾', '🛍️', '📦', '⚙️', '🔋'];
             trash.push({
-                x: canvas.width + Math.random() * 300, // Spawn off-screen to the right
+                x: canvas.width + Math.random() * canvas.width,
                 y: 50 + Math.random() * (canvas.height - 100),
-                width: 30,
-                height: 30,
+                size: 25 + Math.random() * 10,
                 speed: 0.5 + Math.random() * 1,
                 type: trashTypes[Math.floor(Math.random() * trashTypes.length)],
                 collected: false,
@@ -106,7 +104,6 @@ const canvas = document.getElementById('gameCanvas');
             });
         }
         
-        // Criar bolha
         function createBubble() {
             bubbles.push({
                 x: Math.random() * canvas.width,
@@ -117,365 +114,293 @@ const canvas = document.getElementById('gameCanvas');
             });
         }
         
-        // Criar partícula de explosão
         function createExplosion(x, y) {
             for (let i = 0; i < 20; i++) {
                 particles.push({
-                    x: x,
-                    y: y,
+                    x: x, y: y,
                     vx: (Math.random() - 0.5) * 10,
                     vy: (Math.random() - 0.5) * 10,
-                    life: 30,
-                    maxLife: 30,
+                    life: 30, maxLife: 30,
                     color: `hsl(${Math.random() * 60 + 10}, 100%, 50%)`
                 });
             }
         }
         
-        // Atualizar jogo
+        // --- Lógica de Atualização ---
         function update() {
             if (!gameState.running) return;
             
-            // Mover submarino
+            // Mover submarino (teclado + toque)
             if (keys['w'] || keys['arrowup']) submarine.vy -= submarine.speed;
             if (keys['s'] || keys['arrowdown']) submarine.vy += submarine.speed;
             if (keys['a'] || keys['arrowleft']) submarine.vx -= submarine.speed;
             if (keys['d'] || keys['arrowright']) submarine.vx += submarine.speed;
 
-            // Aplicar atrito
             submarine.vx *= submarine.friction;
             submarine.vy *= submarine.friction;
-
-            // Atualizar posição
             submarine.x += submarine.vx;
             submarine.y += submarine.vy;
 
-            // Calcular ângulo baseado na velocidade
             if (Math.abs(submarine.vx) > 0.1 || Math.abs(submarine.vy) > 0.1) {
                 submarine.angle = Math.atan2(submarine.vy, submarine.vx);
             }
             
-            // Verificar limites da tela
-            if (submarine.y <= 0 || submarine.y >= canvas.height - submarine.height) {
+            // Limites da tela
+            if (submarine.y <= submarine.height/2 || submarine.y >= canvas.height - submarine.height/2) {
                 gameOver("Impacto com os limites da missão!");
                 return;
             }
+            submarine.x = Math.max(submarine.width/2, Math.min(canvas.width - submarine.width/2, submarine.x));
             
-            // Manter submarino dentro dos limites horizontais
-            submarine.x = Math.max(0, Math.min(canvas.width - submarine.width, submarine.x));
-            
-            // Atualizar posição do cenário para rolagem
-            backgroundX += backgroundScrollSpeed;
-            if (backgroundX >= canvas.width) {
-                backgroundX = 0; // Reiniciar quando o cenário rolar uma tela inteira
-            }
+            backgroundX = (backgroundX + backgroundScrollSpeed) % canvas.width;
 
             // Atualizar peixes
-            for (let i = fish.length - 1; i >= 0; i--) {
-                let f = fish[i];
-                f.x -= f.speed + backgroundScrollSpeed; // Mover peixes para a esquerda com o cenário
+            fish.forEach((f, i) => {
+                f.x -= f.speed + backgroundScrollSpeed;
                 f.phase += f.frequency;
                 f.y += Math.sin(f.phase) * f.amplitude * 0.1;
                 
-                // Verificar colisão com submarino
                 if (checkCollision(submarine, f)) {
                     gameOver("Você atingiu um animal marinho!");
                     return;
                 }
                 
-                // Remover peixes que saíram da tela e criar novos
-                if (f.x < -f.width) {
+                if (f.x < -f.size) {
                     fish.splice(i, 1);
                     createFish();
                 }
-            }
+            });
             
             // Atualizar lixo
-            for (let i = trash.length - 1; i >= 0; i--) {
-                let t = trash[i];
+            trash.forEach((t, i) => {
                 if (!t.collected) {
-                    t.x -= t.speed + backgroundScrollSpeed; // Mover lixo para a esquerda com o cenário
+                    t.x -= t.speed + backgroundScrollSpeed;
                     t.bobOffset += 0.05;
                     t.y += Math.sin(t.bobOffset) * 0.5;
                     
-                    // Verificar se está dentro do range de coleta
-                    let distance = Math.sqrt(
-                        Math.pow(submarine.x + submarine.width/2 - (t.x + t.width/2), 2) +
-                        Math.pow(submarine.y + submarine.height/2 - (t.y + t.height/2), 2)
-                    );
+                    let distance = Math.hypot(submarine.x - t.x, submarine.y - t.y);
                     
-                    if (distance <= submarine.collectRange && (keys['e'] || keys[' '])) {
+                    if (distance <= submarine.collectRange && (keys['e'] || keys[' '] || keys['collect'])) {
                         t.collected = true;
                         gameState.trashCollected++;
                         updateUI();
                         
-                        // Criar efeito de coleta
                         for (let j = 0; j < 5; j++) {
                             particles.push({
-                                x: t.x + t.width/2,
-                                y: t.y + t.height/2,
-                                vx: (Math.random() - 0.5) * 4,
-                                vy: (Math.random() - 0.5) * 4,
-                                life: 20,
-                                maxLife: 20,
-                                color: '#00ff00'
+                                x: t.x, y: t.y,
+                                vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                                life: 20, maxLife: 20, color: '#00ff00'
                             });
                         }
                     }
                 }
                 
-                // Remover lixo coletado ou que saiu da tela
-                if (t.collected || t.x < -t.width) {
+                if (t.collected || t.x < -t.size) {
                     trash.splice(i, 1);
-                    if (!t.collected) {
-                        createTrash();
-                    } else {
-                        // Criar novo lixo após coletar
-                        setTimeout(createTrash, 2000 + Math.random() * 3000);
-                    }
+                    setTimeout(createTrash, 1000 + Math.random() * 2000);
                 }
-            }
+            });
             
             // Atualizar bolhas
-            for (let i = bubbles.length - 1; i >= 0; i--) {
-                let b = bubbles[i];
+            bubbles.forEach((b, i) => {
                 b.y -= b.speed;
-                
                 if (b.y < -b.size) {
                     bubbles.splice(i, 1);
                     createBubble();
                 }
-            }
+            });
             
             // Atualizar partículas
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
+            particles.forEach((p, i) => {
                 p.x += p.vx;
                 p.y += p.vy;
                 p.life--;
-                
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-            
-            // Adicionar novos peixes ocasionalmente
-            // A frequência foi reduzida de 0.01 para 0.005 para diminuir a quantidade de peixes
-            if (Math.random() < 0.005) {
-                createFish();
-            }
+                if (p.life <= 0) particles.splice(i, 1);
+            });
         }
         
-        // Verificar colisão
         function checkCollision(obj1, obj2) {
-            const center1X = obj1.x + obj1.width / 2;
-            const center1Y = obj1.y + obj1.height / 2;
-            const center2X = obj2.x + obj2.width / 2; 
-            const center2Y = obj2.y + obj2.height / 2;
-
-            const dx = center1X - center2X;
-            const dy = center1Y - center2Y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            const combinedRadius = (Math.max(obj1.width, obj1.height) / 2) + (Math.max(obj2.width, obj2.height) / 2);
-            return distance < combinedRadius;
+            const dx = obj1.x - obj2.x;
+            const dy = obj1.y - obj2.y;
+            const distance = Math.hypot(dx, dy);
+            const combinedRadius = (obj1.width / 2) + (obj2.size / 2);
+            return distance < combinedRadius * 0.8; // 0.8 para uma colisão mais justa
         }
         
-        // Renderizar jogo
+        // --- Funções de Renderização ---
         function render() {
-            // Limpar canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Desenhar fundo oceânico
             drawOceanBackground();
             
-            // Desenhar bolhas
-            bubbles.forEach(bubble => {
-                ctx.globalAlpha = bubble.opacity;
-                ctx.fillStyle = '#87CEEB';
+            bubbles.forEach(b => {
+                ctx.globalAlpha = b.opacity;
+                ctx.fillStyle = '#ADD8E6';
                 ctx.beginPath();
-                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.globalAlpha = 1;
             });
+            ctx.globalAlpha = 1;
             
-            // Desenhar range de coleta do submarino
             if (gameState.running) {
-                ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.2)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(
-                    submarine.x + submarine.width/2,
-                    submarine.y + submarine.height/2,
-                    submarine.collectRange,
-                    0, Math.PI * 2
-                );
+                ctx.arc(submarine.x, submarine.y, submarine.collectRange, 0, Math.PI * 2);
                 ctx.stroke();
             }
             
-            // Desenhar submarino
-            if (gameState.running) {
-                drawSubmarine();
-            }
+            if (gameState.running) drawSubmarine();
             
-            // Desenhar peixes
             fish.forEach(f => {
-                ctx.font = '40px Arial';
+                ctx.font = `${f.size}px Arial`;
                 ctx.textAlign = 'center';
-                ctx.fillText(f.type, f.x + f.width/2, f.y + f.height/2 + 10);
+                ctx.textBaseline = 'middle';
+                ctx.fillText(f.type, f.x, f.y);
             });
             
-            // Desenhar lixo
             trash.forEach(t => {
                 if (!t.collected) {
-                    ctx.font = '30px Arial';
+                    ctx.font = `${t.size}px Arial`;
                     ctx.textAlign = 'center';
-                    ctx.fillText(t.type, t.x + t.width/2, t.y + t.height/2 + 10);
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(t.type, t.x, t.y);
                     
-                    // Destacar lixo dentro do range
-                    let distance = Math.sqrt(
-                        Math.pow(submarine.x + submarine.width/2 - (t.x + t.width/2), 2) +
-                        Math.pow(submarine.y + submarine.height/2 - (t.y + t.height/2), 2)
-                    );
-                    
+                    let distance = Math.hypot(submarine.x - t.x, submarine.y - t.y);
                     if (distance <= submarine.collectRange) {
-                        ctx.strokeStyle = '#ffff00';
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(t.x - 5, t.y - 5, t.width + 10, t.height + 10);
+                        ctx.strokeStyle = 'rgba(255, 255, 0, 0.7)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
+                        ctx.stroke();
                     }
                 }
             });
             
-            // Desenhar partículas
             particles.forEach(p => {
                 ctx.globalAlpha = p.life / p.maxLife;
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-                ctx.globalAlpha = 1;
             });
+            ctx.globalAlpha = 1;
         }
         
-        // Desenhar fundo oceânico
         function drawOceanBackground() {
-            // Plantas aquáticas e corais são desenhados duas vezes para criar um loop contínuo
             const drawElements = (offsetX) => {
-                // Plantas aquáticas
-                for (let i = 0; i < 10; i++) {
-                    let x = i * 80 + (Math.sin(Date.now() * 0.001 + i) * 10) + offsetX;
-                    ctx.fillStyle = '#228B22';
-                    ctx.fillRect(x, canvas.height - 60, 3, 60);
-                    ctx.fillRect(x + 10, canvas.height - 80, 3, 80);
-                }
-                
-                // Corais
-                ctx.font = '30px Arial';
+                ctx.font = 'clamp(20px, 5vw, 40px) Arial';
                 ctx.textAlign = 'center';
-                for (let i = 0; i < 5; i++) {
+                for (let i = 0; i < Math.ceil(canvas.width / 160) + 1; i++) {
                     let x = i * 160 + 50 + offsetX;
                     ctx.fillText('🪸', x, canvas.height - 20);
                 }
             };
-
-            // Desenha o cenário principal
             drawElements(-backgroundX);
-            // Desenha uma segunda cópia do cenário para criar o loop
             drawElements(-backgroundX + canvas.width);
-
-            // Se o cenário principal saiu da tela, reinicia a posição
-            if (-backgroundX <= -canvas.width) {
-                backgroundX = 0;
-            }
         }
         
-        // Desenhar submarino (AGORA COM ROTAÇÃO!)
+        // --- DESIGN ORIGINAL DO SUBMARINO ---
         function drawSubmarine() {
-            ctx.save(); // Salva o estado atual do canvas
-            // Move o ponto de origem para o centro do submarino para rotação
-            ctx.translate(submarine.x + submarine.width / 2, submarine.y + submarine.height / 2);
-            ctx.rotate(submarine.angle); // Rotaciona o canvas
+            const sub = submarine;
+            ctx.save();
+            ctx.translate(sub.x, sub.y);
+            ctx.rotate(sub.angle);
 
-            // Desenhe o submarino em torno de (0,0) (que agora é o centro do submarino)
+            // Desenhe o submarino em torno de (0,0) que agora é o centro
             ctx.fillStyle = '#FFD700'; // Cor dourada
             
-            // Corpo principal (agora centrado em 0,0)
-            ctx.fillRect(-submarine.width / 2, -submarine.height / 2 + 8, submarine.width - 10, submarine.height - 16);
+            // Corpo principal
+            ctx.fillRect(-sub.width / 2, -sub.height / 2 + 8, sub.width - 10, sub.height - 16);
             
             // Frente pontiaguda
             ctx.beginPath();
-            ctx.moveTo(submarine.width / 2 - 10, -submarine.height / 2 + 8);
-            ctx.lineTo(submarine.width / 2, 0); // Centro do submarino
-            ctx.lineTo(submarine.width / 2 - 10, submarine.height / 2 - 8);
+            ctx.moveTo(sub.width / 2 - 10, -sub.height / 2 + 8);
+            ctx.lineTo(sub.width / 2, 0);
+            ctx.lineTo(sub.width / 2 - 10, sub.height / 2 - 8);
             ctx.fill();
             
             // Torre
-            ctx.fillRect(-submarine.width / 2 + 15, -submarine.height / 2, 20, 15);
+            ctx.fillRect(-sub.width / 2 + 15, -sub.height / 2, 20, 15);
             
             // Periscópio
             ctx.fillStyle = '#B8860B';
-            ctx.fillRect(-submarine.width / 2 + 20, -submarine.height / 2 - 5, 2, 10);
+            ctx.fillRect(-sub.width / 2 + 20, -sub.height / 2 - 5, 2, 10);
             
             // Janelas
             ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(-submarine.width / 2 + 8, -submarine.height / 2 + 12, 8, 6);
-            ctx.fillRect(-submarine.width / 2 + 25, -submarine.height / 2 + 12, 8, 6);
+            ctx.fillRect(-sub.width / 2 + 8, -sub.height / 2 + 12, 8, 6);
+            ctx.fillRect(-sub.width / 2 + 25, -sub.height / 2 + 12, 8, 6);
             
             // Hélice
             ctx.fillStyle = '#696969';
             let propellerAngle = Date.now() * 0.02;
             ctx.save();
-            ctx.translate(-submarine.width / 2, 0); // Move para a parte traseira do submarino
+            ctx.translate(-sub.width / 2, 0); // Move para a parte traseira do submarino
             ctx.rotate(propellerAngle);
             ctx.fillRect(-8, -2, 16, 4);
             ctx.fillRect(-2, -8, 4, 16);
             ctx.restore();
 
-            ctx.restore(); // Restaura o estado original do canvas
+            ctx.restore();
         }
         
-        // Game Over
+        // --- Controle do Jogo ---
         function gameOver(message) {
+            if (!gameState.running) return; // Evita chamadas múltiplas
             gameState.running = false;
+            createExplosion(submarine.x, submarine.y);
             document.getElementById('gameOverMessage').textContent = message;
-            gameOverDiv.style.display = 'block';
+            setTimeout(() => {
+                 gameOverDiv.style.display = 'block';
+            }, 500);
         }
         
-        // Atualizar UI
         function updateUI() {
             document.getElementById('trashCount').textContent = gameState.trashCollected;
-            document.getElementById('lives').textContent = gameState.lives;
         }
         
-        // Loop principal do jogo
         function gameLoop() {
             update();
             render();
             requestAnimationFrame(gameLoop);
         }
         
-        // Event listeners
-        document.addEventListener('keydown', function(e) {
+        // --- Event Listeners ---
+        document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
-            keys[e.code] = true;
-            
-            // Bug escondido: Ctrl + Backspace
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Backspace') {
-                createExplosion(submarine.x + submarine.width/2, submarine.y + submarine.height/2);
-                gameOver("💥 Submarino explodiu! ( Parece que você não conseguiu limpar o lixo )");
+            if (e.key.toLowerCase() === 'r' && !gameState.running) initGame();
+        });
+        
+        document.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // --- Controles de Toque ---
+        function handleTouch(e, isPressed) {
+            e.preventDefault();
+            const id = e.currentTarget.id;
+            switch(id) {
+                case 'btn-up': keys['w'] = isPressed; break;
+                case 'btn-down': keys['s'] = isPressed; break;
+                case 'btn-left': keys['a'] = isPressed; break;
+                case 'btn-right': keys['d'] = isPressed; break;
+                case 'btn-collect': keys['collect'] = isPressed; break;
             }
-            
-            // Reiniciar jogo
-            if (e.key.toLowerCase() === 'r') {
+        }
+        
+        const touchButtons = document.querySelectorAll('.touch-btn');
+        touchButtons.forEach(btn => {
+            btn.addEventListener('touchstart', e => handleTouch(e, true), { passive: false });
+            btn.addEventListener('touchend', e => handleTouch(e, false), { passive: false });
+            btn.addEventListener('touchcancel', e => handleTouch(e, false), { passive: false });
+        });
+
+        // Reiniciar com toque na tela de Game Over
+        gameOverDiv.addEventListener('click', () => {
+            if (!gameState.running) {
                 initGame();
             }
-            
-            e.preventDefault();
         });
-        
-        document.addEventListener('keyup', function(e) {
-            keys[e.key.toLowerCase()] = false;
-            keys[e.code] = false;
-        });
-        
-        // Inicializar e começar o jogo
+
+        // --- Iniciar Jogo ---
         initGame();
         gameLoop();
