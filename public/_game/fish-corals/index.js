@@ -10,7 +10,7 @@ const defaultGame = {
     gravity: 0.6,
     jumpPower: -12,
     gameSpeed: 3,
-    obstacleGap: 210,
+    obstacleGap: 215,
     lastObstacle: 800
 };
 
