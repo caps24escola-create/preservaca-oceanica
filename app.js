@@ -39,6 +39,10 @@ app.get('/game/oceanic-memory', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'game', 'oceanic-memory.html'));
 });
 
+app.get('/quiz', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'game', 'quiz.html'));
+});
+
 // Error handling
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));

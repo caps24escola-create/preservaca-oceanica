@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz: Preservação Oceânica</title>
+  <link rel="stylesheet" href="/_game/quiz/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">OC</div>
+      <div style="flex:1">
+        <h1>Quiz: Preservação Oceânica</h1>
+        <p class="lead">Banco: 25 perguntas — cada rodada usa 10 perguntas aleatórias. Ao responder cada questão, a resposta correta é exibida imediatamente.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <button id="restart" class="ghost" title="Reiniciar quiz">Reiniciar</button>
+      </div>
+    </header>
+
+    <div class="quiz">
+      <div class="card">
+        <div id="main">
+          <div class="question" id="question">Carregando pergunta...</div>
+          <div class="options" id="options"></div>
+
+          <div class="feedback" id="feedback" aria-live="polite" style="display:none"></div>
+
+          <div class="controls">
+            <div>
+              <button id="prev" class="ghost">← Anterior</button>
+              <button id="next" class="ghost">Próxima →</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="meta">Pergunta <span id="index">0</span>/<span id="total">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="after" style="display:none;margin-top:14px"></div>
+      </div>
+
+      <aside class="side">
+        <div class="card">
+          <div class="meta">Progresso</div>
+          <div style="margin-top:8px" class="progress"><i id="bar"></i></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <div class="meta">Respondidas: <span id="answered">0</span></div>
+            <div class="meta">Pontuação: <span id="score">0</span><span>/10</span></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="meta">Navegar (clique para ir)</div>
+          <div style="margin-top:10px" class="question-list" id="qList"></div>
+        </div>
+
+        <div class="card result" id="hint">
+          <div class="meta">Dica rápida</div>
+          <p style="margin:8px 0 0">Reduzir o uso de plástico descartável, apoiar áreas marinhas protegidas e evitar despejos ajudam a conservar os oceanos.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>Feito para educação — tema: preservação dos oceanos.</footer>
+  </div>
+
+  <script src="/_game/quiz/index.js"></script>
+</body>
+</html>
