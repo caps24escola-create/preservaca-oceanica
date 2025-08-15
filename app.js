@@ -43,6 +43,12 @@ app.get('/quiz', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'game', 'quiz.html'));
 });
 
+
+// QR CODE page
+app.get('/qr', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'qr.html'));
+});
+
 // Error handling
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
